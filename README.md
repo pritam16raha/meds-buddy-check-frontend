@@ -6,7 +6,7 @@ Welcome to MediCare Companion, a modern, full-stack web application designed to 
 
 **Frontend Repo:** [https://github.com/pritam16raha/meds-buddy-check-frontend.git](https://github.com/pritam16raha/meds-buddy-check-frontend.git)
 
-**Backend:** [https://github.com/pritam16raha/meds_buddy_check_backend.git](https://github.com/pritam16raha/meds_buddy_check_backend.git)
+**Backend Repo:** [https://github.com/pritam16raha/meds_buddy_check_backend.git](https://github.com/pritam16raha/meds_buddy_check_backend.git)
 
 ---
 
