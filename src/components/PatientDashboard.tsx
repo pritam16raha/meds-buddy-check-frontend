@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,11 +30,31 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useMemo } from "react";
 import { ProofUploader } from "./ProofUploader";
+import { ImageViewer } from "./ImageViewer";
+
+type Medication = {
+  id: number;
+  name: string;
+  dosage: string | null;
+  frequency: string | null;
+  user_id: string;
+};
+
+type MedicationLog = {
+  id: number;
+  medication_id: number;
+  taken_at: string;
+  proof_image_url: string | null;
+  medications: Medication;
+};
 
 const PatientDashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddMedicationOpen, setIsAddMedicationOpen] = useState(false);
-
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [thumbnailUrls, setThumbnailUrls] = useState<{ [key: string]: string }>(
+    {}
+  );
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
@@ -52,32 +72,69 @@ const PatientDashboard = () => {
     }));
   };
 
-  const fetchMedications = async () => {
+  const fetchMedications = async (): Promise<Medication[]> => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error("User not found.");
-    }
+    if (!user) throw new Error("User not found.");
     const { data, error } = await supabase
       .from("medications")
       .select("*")
       .eq("user_id", user.id);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-    return data;
+    if (error) throw new Error(error.message);
+    return data || [];
   };
 
   const {
     data: medications,
-    isLoading,
-    error,
+    isLoading: isLoadingMeds,
+    error: errorMeds,
   } = useQuery({
     queryKey: ["medications"],
     queryFn: fetchMedications,
   });
+
+  const fetchMedicationLogs = async (): Promise<MedicationLog[]> => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from("medication_logs")
+      .select("*, medications(*)")
+      .eq("user_id", user.id);
+    if (error) throw new Error(error.message);
+    return data || [];
+  };
+
+  const { data: medicationLogs, isLoading: isLoadingLogs } = useQuery({
+    queryKey: ["medication_logs"],
+    queryFn: fetchMedicationLogs,
+  });
+
+  const takenDatesSet = useMemo(() => {
+    if (!medicationLogs) return new Set<string>();
+    return new Set(
+      medicationLogs.map((log) => format(new Date(log.taken_at), "yyyy-MM-dd"))
+    );
+  }, [medicationLogs]);
+
+  const logsForSelectedDate = useMemo(() => {
+    if (!medicationLogs) return [];
+    return medicationLogs.filter(
+      (log) =>
+        format(new Date(log.taken_at), "yyyy-MM-dd") ===
+        format(selectedDate, "yyyy-MM-dd")
+    );
+  }, [medicationLogs, selectedDate]);
+
+  const pendingMedsForSelectedDate = useMemo(() => {
+    if (!medications) return [];
+    const takenMedIds = new Set(
+      logsForSelectedDate.map((log) => log.medication_id)
+    );
+    return medications.filter((med) => !takenMedIds.has(med.id));
+  }, [medications, logsForSelectedDate]);
 
   const markAsTakenMutation = useMutation({
     mutationFn: async ({
@@ -93,7 +150,9 @@ const PatientDashboard = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not found.");
-      let imageUrl: string | null = null;
+
+      let imagePath: string | null = null;
+
       if (proofImageFile) {
         const fileExt = proofImageFile.name.split(".").pop();
         const filePath = `${
@@ -104,23 +163,18 @@ const PatientDashboard = () => {
           .from("proof16photos")
           .upload(filePath, proofImageFile);
 
-        if (uploadError) {
+        if (uploadError)
           throw new Error(`Image Upload Failed: ${uploadError.message}`);
-        }
-
-        const { data: urlData } = supabase.storage
-          .from("proof16photos")
-          .getPublicUrl(filePath);
-
-        imageUrl = urlData.publicUrl;
+        imagePath = filePath;
       }
+
       const { error: insertError, data } = await supabase
         .from("medication_logs")
         .insert({
           medication_id: medicationId,
           user_id: user.id,
           taken_at: date.toISOString(),
-          proof_image_url: imageUrl,
+          proof_image_url: imagePath,
         })
         .select();
 
@@ -150,33 +204,6 @@ const PatientDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["medication_logs"] });
     },
   });
-  const fetchMedicationLogs = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not found.");
-
-    const { data, error } = await supabase
-      .from("medication_logs")
-      .select("taken_at")
-      .eq("user_id", user.id);
-
-    if (error) throw error;
-    return data;
-  };
-
-  const { data: medicationLogs, isLoading: isLoadingLogs } = useQuery({
-    queryKey: ["medication_logs"],
-    queryFn: fetchMedicationLogs,
-  });
-
-  const takenDatesSet = useMemo(() => {
-    if (!medicationLogs) return new Set<string>();
-    const dates = medicationLogs.map((log) =>
-      format(new Date(log.taken_at), "yyyy-MM-dd")
-    );
-    return new Set(dates);
-  }, [medicationLogs]);
 
   const getStreakCount = () => {
     let streak = 0;
@@ -200,6 +227,38 @@ const PatientDashboard = () => {
 
     return Math.round((takenCount / daysInPeriod.length) * 100);
   };
+
+  useEffect(() => {
+    if (!medicationLogs || medicationLogs.length === 0) {
+      return;
+    }
+
+    const fetchThumbnailUrls = async () => {
+      const imagePaths = medicationLogs
+        .map((log) => log.proof_image_url)
+        .filter((path): path is string => !!path);
+
+      if (imagePaths.length === 0) return;
+
+      const { data, error } = await supabase.storage
+        .from("proof16photos")
+        .createSignedUrls(imagePaths, 60 * 5);
+
+      if (error) {
+        console.error("Error creating signed URLs for thumbnails:", error);
+        return;
+      }
+
+      const urlMap = imagePaths.reduce((acc, path, index) => {
+        acc[path] = data[index].signedUrl;
+        return acc;
+      }, {} as { [key: string]: string });
+
+      setThumbnailUrls(urlMap);
+    };
+
+    fetchThumbnailUrls();
+  }, [medicationLogs]);
 
   return (
     <div className="space-y-6">
@@ -247,14 +306,11 @@ const PatientDashboard = () => {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="h-fit">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <CalendarIcon className="w-6 h-6 text-blue-600" />
-                {isTodaySelected
-                  ? "Today's Medication"
-                  : `Medication for ${format(selectedDate, "MMMM d, yyyy")}`}
+                Medication for {format(selectedDate, "MMMM d, yyyy")}
               </CardTitle>
-
               <Dialog
                 open={isAddMedicationOpen}
                 onOpenChange={setIsAddMedicationOpen}
@@ -278,60 +334,124 @@ const PatientDashboard = () => {
                 </DialogContent>
               </Dialog>
             </CardHeader>
+
             <CardContent>
-              {isLoading && <p>Loading your medications...</p>}
-              {error && <p className="text-red-500">Error: {error.message}</p>}
-              {medications && medications.length > 0 && (
-                <ul className="space-y-4">
-                  {medications.map((med) => {
-                    const isThisMedicationBeingMarked =
-                      markAsTakenMutation.isPending &&
-                      markAsTakenMutation.variables === med.id;
-
-                    const selectedFile = selectedFiles[med.id];
-
-                    return (
-                      <li key={med.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-center">
+              {(isLoadingMeds || isLoadingLogs) && (
+                <p className="text-center p-4">Loading medications...</p>
+              )}
+              {errorMeds && (
+                <p className="text-red-500 p-4">Error: {errorMeds.message}</p>
+              )}
+              {logsForSelectedDate.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-sm text-gray-500 mb-2 border-b pb-2">
+                    Taken
+                  </h4>
+                  <ul className="space-y-2 pt-2">
+                    {logsForSelectedDate.map((log) => (
+                      <li
+                        key={log.id}
+                        className="p-3 border rounded-lg flex justify-between items-center bg-green-50/70"
+                      >
+                        <div className="flex items-center gap-4">
+                          {log.proof_image_url &&
+                            thumbnailUrls[log.proof_image_url] && (
+                              <img
+                                src={thumbnailUrls[log.proof_image_url]}
+                                alt={`Proof for ${log.medications?.name}`}
+                                className="w-12 h-12 object-cover rounded-md cursor-pointer hover:scale-110 transition-transform"
+                                onClick={() =>
+                                  setViewingImage(log.proof_image_url)
+                                }
+                              />
+                            )}
                           <div>
-                            <p className="font-bold">{med.name}</p>
-                            <p className="text-sm text-gray-500">
-                              {med.dosage} - {med.frequency}
+                            <p className="font-medium">
+                              {log.medications?.name || "Medication"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {log.medications?.dosage} -{" "}
+                              {log.medications?.frequency}
                             </p>
                           </div>
-
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              markAsTakenMutation.mutate({
-                                medicationId: med.id,
-                                date: selectedDate,
-                                proofImageFile: selectedFile,
-                              })
-                            }
-                            disabled={isThisMedicationBeingMarked}
-                          >
-                            {isThisMedicationBeingMarked
-                              ? "Marking..."
-                              : "Mark as Taken"}
-                          </Button>
                         </div>
-                        <ProofUploader
-                          medicationId={med.id}
-                          onFileSelect={handleFileSelect}
-                        />
-                        {selectedFile && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            File selected: {selectedFile.name}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-2 text-green-700 font-medium">
+                          <Check className="w-5 h-5" />
+                          <span>Taken</span>
+                        </div>
                       </li>
-                    );
-                  })}
-                </ul>
+                    ))}
+                  </ul>
+                </div>
               )}
-              {medications && medications.length === 0 && (
-                <p>
+
+              {pendingMedsForSelectedDate.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-500 mb-2 border-b pb-2">
+                    Pending
+                  </h4>
+                  <ul className="space-y-4 pt-2">
+                    {pendingMedsForSelectedDate.map((med) => {
+                      const isThisMedicationBeingMarked =
+                        markAsTakenMutation.isPending &&
+                        markAsTakenMutation.variables?.medicationId === med.id;
+                      const selectedFile = selectedFiles[med.id];
+
+                      return (
+                        <li
+                          key={med.id}
+                          className="p-4 border rounded-lg bg-white"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-bold">{med.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {med.dosage} - {med.frequency}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                markAsTakenMutation.mutate({
+                                  medicationId: med.id,
+                                  date: selectedDate,
+                                  proofImageFile: selectedFile,
+                                })
+                              }
+                              disabled={isThisMedicationBeingMarked}
+                            >
+                              {isThisMedicationBeingMarked
+                                ? "Marking..."
+                                : "Mark as Taken"}
+                            </Button>
+                          </div>
+                          <ProofUploader
+                            medicationId={med.id}
+                            onFileSelect={handleFileSelect}
+                          />
+                          {selectedFile && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              File selected: {selectedFile.name}
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {!isLoadingMeds &&
+                !isLoadingLogs &&
+                pendingMedsForSelectedDate.length === 0 &&
+                logsForSelectedDate.length > 0 && (
+                  <div className="text-center p-4 bg-green-50 text-green-700 rounded-lg">
+                    <p>All medications for this day have been logged!</p>
+                  </div>
+                )}
+
+              {!isLoadingMeds && medications?.length === 0 && (
+                <p className="p-4">
                   You haven't added any medications yet. Click "+ Add
                   Medication" to get started.
                 </p>
@@ -339,7 +459,6 @@ const PatientDashboard = () => {
             </CardContent>
           </Card>
         </div>
-
         <div>
           <Card>
             <CardHeader>
@@ -402,6 +521,10 @@ const PatientDashboard = () => {
           </Card>
         </div>
       </div>
+      <ImageViewer
+        filePath={viewingImage}
+        onClose={() => setViewingImage(null)}
+      />
     </div>
   );
 };

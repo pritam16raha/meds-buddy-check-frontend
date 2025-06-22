@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +12,12 @@ interface MedicationTrackerProps {
   isToday: boolean;
 }
 
-const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTrackerProps) => {
+const MedicationTracker = ({
+  date,
+  isTaken,
+  onMarkTaken,
+  isToday,
+}: MedicationTrackerProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +25,7 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
   const dailyMedication = {
     name: "Daily Medication Set",
     time: "8:00 AM",
-    description: "Complete set of daily tablets"
+    description: "Complete set of daily tablets",
   };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,11 +58,12 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
               Medication Completed!
             </h3>
             <p className="text-green-600">
-              Great job! You've taken your medication for {format(new Date(date), 'MMMM d, yyyy')}.
+              Great job! You've taken your medication for{" "}
+              {format(new Date(date), "MMMM d, yyyy")}.
             </p>
           </div>
         </div>
-        
+
         <Card className="border-green-200 bg-green-50/50">
           <CardContent className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
@@ -66,8 +71,12 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
                 <Check className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="font-medium text-green-800">{dailyMedication.name}</h4>
-                <p className="text-sm text-green-600">{dailyMedication.description}</p>
+                <h4 className="font-medium text-green-800">
+                  {dailyMedication.name}
+                </h4>
+                <p className="text-sm text-green-600">
+                  {dailyMedication.description}
+                </p>
               </div>
             </div>
             <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -90,7 +99,9 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
             </div>
             <div>
               <h4 className="font-medium">{dailyMedication.name}</h4>
-              <p className="text-sm text-muted-foreground">{dailyMedication.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {dailyMedication.description}
+              </p>
             </div>
           </div>
           <Badge variant="outline">
@@ -100,7 +111,6 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
         </CardContent>
       </Card>
 
-      {/* Image Upload Section */}
       <Card className="border-dashed border-2 border-border/50">
         <CardContent className="p-6">
           <div className="text-center">
@@ -109,7 +119,7 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
             <p className="text-sm text-muted-foreground mb-4">
               Take a photo of your medication or pill organizer as confirmation
             </p>
-            
+
             <input
               type="file"
               accept="image/*"
@@ -117,7 +127,7 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
               ref={fileInputRef}
               className="hidden"
             />
-            
+
             <Button
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
@@ -126,7 +136,7 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
               <Camera className="w-4 h-4 mr-2" />
               {selectedImage ? "Change Photo" : "Take Photo"}
             </Button>
-            
+
             {imagePreview && (
               <div className="mt-4">
                 <img
@@ -143,7 +153,6 @@ const MedicationTracker = ({ date, isTaken, onMarkTaken, isToday }: MedicationTr
         </CardContent>
       </Card>
 
-      {/* Mark as Taken Button */}
       <Button
         onClick={handleMarkTaken}
         className="w-full py-4 text-lg bg-green-600 hover:bg-green-700 text-white"

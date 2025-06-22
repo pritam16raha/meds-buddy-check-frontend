@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Onboarding from "@/components/Onboarding";
 import PatientDashboard from "@/components/PatientDashboard";
 import CaretakerDashboard from "@/components/CaretakerDashboard";
 import { Button } from "@/components/ui/button";
-import { Users, User, LogOut } from "lucide-react";
+import { Users, User, LogOut, LogIn } from "lucide-react";
 import { supabase } from "@/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Session } from "@supabase/supabase-js";
 
 type UserType = "patient" | "caretaker" | null;
 
@@ -13,6 +14,24 @@ const Index = () => {
   const [userType, setUserType] = useState<UserType>(null);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const navigate = useNavigate();
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleOnboardingComplete = (type: UserType) => {
     setUserType(type);
@@ -68,19 +87,38 @@ const Index = () => {
             Switch to {userType === "patient" ? "Caretaker" : "Patient"}
           </Button>
 
-          <Button
-            variant="destructive"
-            onClick={handleSignOut}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          {session ? (
+            <div className="flex items-center gap-4">
+              <Button
+                variant="destructive"
+                onClick={handleSignOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <Link to="/signin">
+              <Button className="flex items-center gap-2">
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
-        {userType === "patient" ? <PatientDashboard /> : <CaretakerDashboard />}
+        {session ? (
+          userType === "patient" ? (
+            <PatientDashboard />
+          ) : (
+            <CaretakerDashboard />
+          )
+        ) : (
+          <p>Please sign in to view your dashboard.</p>
+        )}
       </main>
     </div>
   );
