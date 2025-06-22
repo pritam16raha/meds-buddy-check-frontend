@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function SignIn() {
   const [loading, setLoading] = useState(false);
@@ -77,9 +77,9 @@ export function SignIn() {
             </Button>
             <p className="mt-4 text-center text-sm text-gray-600">
               Don't have an account?{" "}
-              <a href="/signup" className="text-blue-600 hover:underline">
+              <Link to="/signup" className="text-blue-600 hover:underline">
                 Sign Up
-              </a>
+              </Link>
             </p>
           </CardFooter>
         </form>

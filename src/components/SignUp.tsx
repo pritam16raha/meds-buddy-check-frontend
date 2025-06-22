@@ -123,9 +123,9 @@ export function SignUp() {
             </Button>
             <p className="mt-4 text-center text-sm text-gray-600">
               Do have an account?{" "}
-              <a href="/signin" className="text-blue-600 hover:underline">
+              <Link to="/signin" className="text-blue-600 hover:underline">
                 Sign In
-              </a>
+              </Link>
             </p>
           </CardFooter>
         </form>
