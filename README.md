@@ -1,77 +1,110 @@
-# MediCare App - 4-6 Hour Assessment
+# MediCare Companion 💊
 
-## Live Demo (UI only): https://meds-buddy-check.lovable.app/
+Welcome to MediCare Companion, a modern, full-stack web application designed to help patients and their caretakers manage medication schedules with ease and accuracy. This project was built as a skills assessment for the React Developer position at GravityWrite.
 
-## Current State of the codebase
+**Live Demo:** [https://meds-buddy-check-frontend.vercel.app/](https://meds-buddy-check-frontend.vercel.app/) 
 
-This is a React medication management app with dual user roles (patients/caretakers). Currently features:
+---
 
-- Role-based dashboard system for each user account with runtime switching (for simplcity)
+### 🏛️ Project Structure
 
-- UI for medication tracking with calendar visualization
+This project is organized into two separate repositories to maintain a clean separation of concerns between the frontend application and the backend database schema definition.
 
-- Mock data for streaks, adherence rates, and medication logs
+* **Frontend (This Repository):** `meds-buddy-check-frontend`
+    * Contains the complete React + Vite application that users interact with.
+    * This is the **main project** that needs to be run.
 
-- Photo upload interface for medication proof
+* **Backend (Schema Reference):** `meds-buddy-check-backend`
+    * Contains the Drizzle ORM schemas used to define the database structure.
+    * **You do not need to clone or run this repository.** It is provided for reference only, as Supabase handles the live backend services.
 
-- Notification settings UI (non-functional)
+---
 
-- All data is stored in local state (no persistence)
+### ✨ Key Features
 
+This application is built with a robust set of features that go beyond the basic requirements, demonstrating a full range of development skills.
 
-## Core Implementation Tasks
+#### Core Functionality
+* **Secure User Authentication:** Complete sign-up, sign-in, and sign-out flows powered by Supabase Auth, including email verification.
+* **Dynamic Medication Tracking:** Select any date on the calendar to view a dynamic list of "Taken" and "Pending" medications for that specific day.
+* **Full Medication CRUD:** Logged-in patients can easily **C**reate, **R**ead, **U**pdate, and **D**elete their medications.
+* **Adherence Dashboard:** The dashboard provides real-time statistics on medication adherence, including day streaks and monthly rates.
 
-### Phase 1 (Required - 4 hours):
-- Supabase authentication setup
-- Basic CRUD for adding medications
-- Basic CRUD for marking medication taken for the day
-- Connect one dashboard to real data
+#### Bonus & Advanced Features
+* **📸 Photo Proof Uploads:** Patients can upload a photo as proof of taking their medication, which is securely stored using Supabase Storage and can be viewed in a modal.
+* **⚡ Optimistic UI Updates:** Marking a medication as "taken" updates the UI instantly for a snappy, responsive user experience.
+* **🧪 Comprehensive Testing:** The application includes both unit and component tests written with Vitest.
 
-### Phase 2 (Optional - 2 hours):
-- Caretaker-patient real time updates
-- Basic adherence tracking
+---
 
-### Phase 3 (Bonus):
-- File uploads
+### 🛠️ Tech Stack
 
-**Provided:**
-- UI components and styles
+* **Frontend:** React, TypeScript, Vite, Tailwind CSS
+* **UI Components:** shadcn/ui
+* **Backend & Database:** Supabase (Auth, PostgreSQL, Storage)
+* **Data Fetching:** TanStack Query (React Query)
+* **Schema (Reference):** Drizzle ORM
+* **Form Handling:** React Hook Form with Zod
+* **Testing:** Vitest & React Testing Library
 
-## Required Features:
-1. User login/signup with Supabase Auth
-2. Add medications (name, dosage, frequency)
-3. View medication list
-4. Mark medication as taken today
-5. Simple adherence percentage display
+---
 
-## Technical Requirements:
-- Use provided React + TypeScript template
-- Integrate Supabase for auth and database
-- Use React Query for data fetching
-- Implement error handling
-- Clean, readable code
+### 🗃️ Database Schema
 
-## Other Requirements:
-- Use Git with meaningful commits
-- Implement proper form validation
-- Handle loading and error states consistently
-- Write at least 2-3 meaningful tests using vitest
-- Include a README with setup instructions
+The application's data is structured using four related tables in a PostgreSQL database, managed by Supabase.
 
-## Technical Challenges:
+![Database Schema Diagram](./public/db.png)
 
-**Include:**
-- Optimistic updates using react query
-- Proper TypeScript generics usage
+---
 
-## Deployment Bonus:
-Deploy to Vercel/Netlify
+### 🚀 Getting Started
 
-## We will evaluate:
-- Code organization and architecture decisions
-- Error handling and edge cases
-- TypeScript usage (proper typing, no `any`)
-- Component composition and reusability
-- State management approach
-- Performance considerations (unnecessary re-renders)
-- Security awareness (input sanitization)
+To run this project, you only need to set up the frontend application.
+
+#### Prerequisites
+
+* Node.js (v18 or later)
+* A free Supabase account to create your own database.
+
+#### Setup Instructions
+
+1.  **Clone the Frontend Repository**
+    ```bash
+    git clone [https://github.com/pritam16raha/meds-buddy-check-frontend.git](https://github.com/pritam16raha/meds-buddy-check-frontend.git)
+    cd meds-buddy-check-frontend
+    ```
+
+2.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Set Up Environment Variables**
+    This is the most important step. The application needs to connect to a Supabase project for the backend.
+
+    a. Create a new file named `.env` in the root of the project.
+
+    b. Copy the contents of the `.env.example` file and paste them into your new `.env` file. It should look like this:
+    ```env
+    VITE_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
+    VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+    ```
+    c. **You will need to create your own free Supabase project** to get these keys. In your Supabase project's dashboard, go to **Project Settings > API** to find your **URL** and **`anon` public key**.
+
+    d. **Important:** The database tables will be empty. To test the application fully, you will need to use the provided Drizzle schemas from the [backend reference repository](https://github.com/pritam16raha/meds_buddy_check_backend.git) to set up your tables. *(This note guides them on how to get the schema if they want to recreate it)*.
+
+4.  **Run the Application**
+    You are all set! Run the following command to start the development server.
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173`.
+
+---
+
+### 🔬 Running Tests
+
+To run the suite of tests, use the following command:
+
+```bash
+npm test
