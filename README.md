@@ -2,7 +2,11 @@
 
 Welcome to MediCare Companion, a modern, full-stack web application designed to help patients and their caretakers manage medication schedules with ease and accuracy. This project was built as a skills assessment for the React Developer position at GravityWrite.
 
-**Live Demo:** [https://meds-buddy-check-frontend.vercel.app/](https://meds-buddy-check-frontend.vercel.app/) 
+**Live Demo:** [https://meds-buddy-check-frontend.vercel.app/](https://meds-buddy-check-frontend.vercel.app/)
+
+**Frontend Repo:** [https://github.com/pritam16raha/meds-buddy-check-frontend.git](https://github.com/pritam16raha/meds-buddy-check-frontend.git)
+
+**Backend:** [https://github.com/pritam16raha/meds_buddy_check_backend.git](https://github.com/pritam16raha/meds_buddy_check_backend.git)
 
 ---
 
@@ -70,7 +74,7 @@ To run this project, you only need to set up the frontend application.
 
 1.  **Clone the Frontend Repository**
     ```bash
-    git clone [https://github.com/pritam16raha/meds-buddy-check-frontend.git](https://github.com/pritam16raha/meds-buddy-check-frontend.git)
+    git clone https://github.com/pritam16raha/meds-buddy-check-frontend.git
     cd meds-buddy-check-frontend
     ```
 
